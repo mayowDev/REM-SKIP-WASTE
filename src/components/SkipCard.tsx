@@ -1,105 +1,112 @@
-import React from "react";
-import "../styles/skip-card.scss";
+import { Check, MapPin, Truck, AlertCircle } from "lucide-react";
 import type { Skip } from "../types/skip";
+import { getPriceWithVat } from "../utils";
+import "../styles/SkipCard.scss";
+
 interface SkipCardProps {
   skip: Skip;
   isSelected: boolean;
   onSelect: () => void;
 }
 
-interface Feature {
-  symbol: string;
-  text: string;
-  className: string;
-}
-
-const SkipCard: React.FC<SkipCardProps> = ({ skip, isSelected, onSelect }) => {
-  const totalPrice = Math.round(skip.priceBeforeVat * (1 + skip.vat / 100));
+export default function SkipCard({
+  skip,
+  isSelected,
+  onSelect,
+}: SkipCardProps) {
+  const totalPrice = getPriceWithVat(skip.priceBeforeVat, skip.vat);
   const hasTransportCost = skip.transportCost && skip.perTonneCost;
 
-  const getFeatures = (): Feature[] => {
-    const features: Feature[] = [];
+  const getFeatures = () => {
+    const features = [];
     if (skip.allowedOnRoad)
       features.push({
-        symbol: "📍",
+        icon: MapPin,
         text: "Road placement allowed",
-        className: "text-green",
+        color: "text-green-400",
       });
     if (skip.allowsHeavyWaste)
       features.push({
-        symbol: "🚛",
+        icon: Truck,
         text: "Heavy waste allowed",
-        className: "text-blue",
+        color: "text-blue-400",
       });
     if (!skip.allowedOnRoad)
       features.push({
-        symbol: "⚠️",
+        icon: AlertCircle,
         text: "Private land only",
-        className: "text-amber",
+        color: "text-amber-400",
       });
     return features;
   };
 
   return (
     <div
-      className={`skip-card ${isSelected ? "skip-card--selected" : ""} ${
-        skip.forbidden ? "skip-card--disabled" : ""
+      className={`skip-card ${isSelected ? "selected" : ""} ${
+        skip.forbidden ? "forbidden" : ""
       }`}
-      onClick={!skip.forbidden ? onSelect : undefined}
+      onClick={onSelect}
     >
-      <div className="skip-card__content">
-        <div className="skip-card__image-container">
-          <div className="badge badge--primary size-badge">
-            {skip.size} Yards
-          </div>
+      <div className="skip-card-content">
+        <div className="skip-image-container">
+          <div className="skip-size-badge">{skip.size} Yards</div>
           {skip.forbidden && (
-            <div className="badge badge--danger unavailable-badge">
-              Unavailable
-            </div>
+            <div className="skip-unavailable-badge">Unavailable</div>
           )}
           <img
             src={skip.imageUrl}
             alt={`${skip.size} yard yellow skip container`}
-            className="skip-card__image"
+            className="skip-image"
+            onError={(e) => {
+              console.error("Image failed to load:", skip.imageUrl);
+              const img = e.target as HTMLImageElement;
+              img.style.backgroundColor = "#4b5563";
+              img.style.display = "flex";
+              img.style.alignItems = "center";
+              img.style.justifyContent = "center";
+            }}
+            onLoad={() =>
+              console.log("Image loaded successfully:", skip.imageUrl)
+            }
           />
         </div>
 
-        <div className="skip-card__details">
-          <div className="skip-card__header">
-            <h3 className="skip-card__title">{skip.size} Yard Skip</h3>
-            <div className="skip-card__price-info">
-              <div className="skip-card__total-price text-yellow text-2xl text-bold">
-                £{totalPrice}
-              </div>
+        <div className="skip-details">
+          <div className="skip-header">
+            <h3 className="skip-title">{skip.size} Yard Skip</h3>
+            <div className="skip-price-container">
+              <div className="skip-price">£{totalPrice}</div>
               {hasTransportCost && (
-                <div className="skip-card__transport-cost text-xs text-muted">
+                <div className="skip-transport-cost">
                   + £{skip.transportCost}/tonne
                 </div>
               )}
             </div>
           </div>
 
-          <div className="skip-card__meta">
-            <span className="skip-card__hire-period text-muted">
+          <div className="skip-hire-info">
+            <span className="skip-hire-period">
               {skip.hirePeriodDays} day hire period
             </span>
-            <div className="badge badge--secondary">{skip.postcode}</div>
+            <span className="skip-postcode-badge">{skip.postcode}</span>
           </div>
 
-          <div className="skip-card__features">
+          {/* Features */}
+          <div className="skip-features">
             {getFeatures().map((feature, index) => (
-              <div key={index} className="skip-card__feature">
-                <span
-                  className={`skip-card__feature-icon ${feature.className}`}
-                >
-                  {feature.symbol}
-                </span>
-                <span className="skip-card__feature-text">{feature.text}</span>
+              <div key={index} className="skip-feature">
+                <feature.icon
+                  className={`skip-feature-icon ${feature.color.replace(
+                    "text-",
+                    ""
+                  )}`}
+                />
+                <span className="skip-feature-text">{feature.text}</span>
               </div>
             ))}
           </div>
 
-          <div className="skip-card__price-breakdown">
+          <div className="skip-price-breakdown">
             Price: £{skip.priceBeforeVat} + VAT ({skip.vat}%)
             {hasTransportCost && (
               <div>Transport: £{skip.transportCost} per tonne</div>
@@ -107,12 +114,8 @@ const SkipCard: React.FC<SkipCardProps> = ({ skip, isSelected, onSelect }) => {
           </div>
 
           <button
-            className={`btn w-full ${
-              skip.forbidden
-                ? "btn--disabled"
-                : isSelected
-                ? "btn--primary"
-                : "btn--secondary"
+            className={`skip-select-button ${
+              skip.forbidden ? "forbidden" : isSelected ? "selected" : ""
             }`}
             onClick={(e) => {
               e.stopPropagation();
@@ -123,8 +126,8 @@ const SkipCard: React.FC<SkipCardProps> = ({ skip, isSelected, onSelect }) => {
             {skip.forbidden ? (
               "Unavailable"
             ) : isSelected ? (
-              <div className="flex flex--align-center gap--sm">
-                <span>✓</span>
+              <div className="skip-selected-content">
+                <Check className="check-icon" />
                 <span>Selected</span>
               </div>
             ) : (
@@ -135,6 +138,4 @@ const SkipCard: React.FC<SkipCardProps> = ({ skip, isSelected, onSelect }) => {
       </div>
     </div>
   );
-};
-
-export default SkipCard;
+}

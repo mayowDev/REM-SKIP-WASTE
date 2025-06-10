@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Info } from "lucide-react";
 import ProgressIndicator from "../components/ProgressIndicator";
-import SkipCard from "../components/skip-card";
+import SkipCard from "../components/SkipCard";
 import { skipOptions } from "../data/skipData";
 import { getPriceWithVat } from "../utils";
 import "../styles/home.scss";
